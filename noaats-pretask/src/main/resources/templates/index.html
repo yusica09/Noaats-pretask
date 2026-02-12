@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<link rel="stylesheet" th:href="@{/style.css}">
-
 <head>
   <meta charset="UTF-8">
   <title>할인 전략 계산기</title>
+  <link rel="stylesheet" th:href="@{/style.css}">
 </head>
+
 <body>
 <h2>가장 할인율 높이는 기댓값 찾기</h2>
 
@@ -17,73 +17,97 @@
     <legend>상품 (최대 5종)</legend>
 
     <div id="products">
-      <div class="box" th:each="p, stat : *{products}">
+      <div class="box js-row" th:each="p, stat : *{products}">
         <div class="row">
           <label>상품명</label>
-          <input type="text" th:field="*{products[__${stat.index}__].name}" placeholder="선택">
+          <input type="text" class="js-input" th:field="*{products[__${stat.index}__].name}" placeholder="선택">
+
           <label>단가</label>
-          <input type="number" min="0" th:field="*{products[__${stat.index}__].price}">
+          <input type="number" class="js-input" min="0" th:field="*{products[__${stat.index}__].price}">
+
           <label>수량</label>
-          <input type="number" min="1" th:field="*{products[__${stat.index}__].quantity}">
+          <input type="number" class="js-input" min="1" th:field="*{products[__${stat.index}__].quantity}">
         </div>
 
         <div class="row">
           <label>상품 할인</label>
-          <select th:field="*{products[__${stat.index}__].discountType}">
+          <select class="js-input" th:field="*{products[__${stat.index}__].discountType}">
             <option value="none">없음</option>
             <option value="fixed">정액(원)</option>
             <option value="percent">정률(%)</option>
           </select>
-          <input type="number" min="0" step="0.01" th:field="*{products[__${stat.index}__].discountValue}">
+          <input type="number" class="js-input" min="0" step="0.01"
+                 th:field="*{products[__${stat.index}__].discountValue}">
+        </div>
+
+        <div class="row">
+          <input type="hidden" class="js-active-flag"
+                 th:field="*{products[__${stat.index}__].active}">
+          <button type="button" class="btn-remove js-remove-row">칸 지우기</button>
         </div>
       </div>
     </div>
 
     <button type="button" id="addProductBtn">상품 추가하기</button>
-    <div style="color:#666;font-size:12px;">※ 분할 계산은 “상품 종류(라인)” 단위로만 나눕니다. 수량을 쪼개는 분할은 확장 기능으로 추가 가능합니다.</div>
+    <div style="color:#666;font-size:12px;">
+      ※ 분할 계산은 “상품 종류(라인)” 단위로만 나눕니다. 수량을 쪼개는 분할은 확장 기능으로 추가 가능합니다.
+    </div>
   </fieldset>
 
   <fieldset>
     <legend>보유 쿠폰 (최대 3장)</legend>
 
     <div id="coupons">
-      <div class="box" th:each="c, stat : *{coupons}">
+      <div class="box js-row" th:each="c, stat : *{coupons}">
         <div class="row">
           <label>쿠폰명</label>
-          <input type="text" th:field="*{coupons[__${stat.index}__].name}" placeholder="선택">
+          <input type="text" class="js-input" th:field="*{coupons[__${stat.index}__].name}" placeholder="선택">
+
           <label>타입</label>
-          <select th:field="*{coupons[__${stat.index}__].type}">
+          <select class="js-input" th:field="*{coupons[__${stat.index}__].type}">
             <option value="fixed">정액(원)</option>
             <option value="percent">정률(%)</option>
           </select>
+
           <label>값</label>
-          <input type="number" min="0" step="0.01" th:field="*{coupons[__${stat.index}__].value}">
+          <input type="number" class="js-input" min="0" step="0.01"
+                 th:field="*{coupons[__${stat.index}__].value}">
         </div>
+
         <div class="row">
           <label>최소 구매금액</label>
-          <input type="number" min="0" th:field="*{coupons[__${stat.index}__].minSpend}">
+          <input type="number" class="js-input" min="0" th:field="*{coupons[__${stat.index}__].minSpend}">
+
           <label>최대 할인 한도(선택)</label>
-          <input type="number" min="0" th:field="*{coupons[__${stat.index}__].maxDiscount}">
+          <input type="number" class="js-input" min="0" th:field="*{coupons[__${stat.index}__].maxDiscount}">
+        </div>
+
+        <div class="row">
+          <input type="hidden" class="js-active-flag"
+                 th:field="*{coupons[__${stat.index}__].active}">
+          <button type="button" class="btn-remove js-remove-row">칸 지우기</button>
         </div>
       </div>
     </div>
 
     <button type="button" id="addCouponBtn">쿠폰 추가하기</button>
-    <div style="color:#666;font-size:12px;">※ 쿠폰은 “보유 목록”이고, 주문당 1장만 사용합니다. 한 번 사용한 쿠폰은 재사용 불가로 계산합니다.</div>
+    <div style="color:#666;font-size:12px;">
+      ※ 쿠폰은 “보유 목록”이고, 주문당 1장만 사용합니다. 한 번 사용한 쿠폰은 재사용 불가로 계산합니다.
+    </div>
   </fieldset>
 
   <fieldset>
     <legend>프로모션(금액대 할인)</legend>
     <div class="row">
       <label>조건 금액</label>
-      <input type="number" min="0" th:field="*{thresholdAmount}">
+      <input type="number" class="js-input" min="0" th:field="*{thresholdAmount}">
       <label>할인액</label>
-      <input type="number" min="0" th:field="*{thresholdOff}">
+      <input type="number" class="js-input" min="0" th:field="*{thresholdOff}">
     </div>
 
     <div class="row">
       <label>적용 순서</label>
-      <select th:field="*{promoBeforeCoupon}">
+      <select class="js-input" th:field="*{promoBeforeCoupon}">
         <option th:value="true">금액대 할인 → 쿠폰</option>
         <option th:value="false">쿠폰 → 금액대 할인</option>
       </select>
@@ -94,9 +118,9 @@
     <legend>배송</legend>
     <div class="row">
       <label>배송비</label>
-      <input type="number" min="0" th:field="*{shippingFee}">
+      <input type="number" class="js-input" min="0" th:field="*{shippingFee}">
       <label>무료배송 기준(이상)</label>
-      <input type="number" min="0" th:field="*{freeShippingThreshold}">
+      <input type="number" class="js-input" min="0" th:field="*{freeShippingThreshold}">
     </div>
   </fieldset>
 
@@ -120,74 +144,241 @@
 </div>
 
 <script>
+  // ---- 공통 유틸: 활성 칸 개수 세기 / 숨겨진 칸 복구 ----
+  function countActiveRows(container) {
+    return Array.from(container.querySelectorAll(".js-row"))
+      .filter(row => {
+        const flag = row.querySelector(".js-active-flag");
+        return flag && flag.value === "true" && row.style.display !== "none";
+      }).length;
+  }
+  
+  function syncHiddenRows(container) {
+	  Array.from(container.querySelectorAll(".js-row")).forEach(row => {
+	    const flag = row.querySelector(".js-active-flag");
+	    if (!flag) return;
+
+	    const isActive = (String(flag.value).trim().toLowerCase() === "true");
+
+	    if (!isActive) {
+	      // inactive면: 숨김 + 입력 비활성화
+	      row.style.display = "none";
+	      row.querySelectorAll(".js-input").forEach(el => {
+	        el.disabled = true;
+	      });
+	    } else {
+	      // active면: 표시 + 입력 활성화(사용자 입력 가능)
+	      row.style.display = "";
+	      row.querySelectorAll(".js-input").forEach(el => {
+	        el.disabled = false;
+	      });
+	    }
+	  });
+	}
+
+
+  function reviveOneHiddenRow(container) {
+    const rows = Array.from(container.querySelectorAll(".js-row"));
+    const hidden = rows.find(row => {
+      const flag = row.querySelector(".js-active-flag");
+      return flag && flag.value === "false";
+    });
+
+    if (!hidden) return false;
+
+    // active=true로 복구
+    const flag = hidden.querySelector(".js-active-flag");
+    flag.value = "true";
+
+    // 입력 활성화 + 값 초기화(복구 시 깔끔하게 비우는게 UX 좋음)
+    hidden.querySelectorAll(".js-input").forEach(el => {
+      el.disabled = false;
+      el.value = "";
+    });
+
+    // select는 value=""가 안 먹을 수 있으니, option 첫 값으로 초기화(선택)
+    hidden.querySelectorAll("select.js-input").forEach(sel => {
+      if (sel.options.length > 0) sel.selectedIndex = 0;
+    });
+
+    hidden.style.display = "";
+    return true;
+  }
+  
+  // 상품 개수 1개면 삭제 버튼 지우기
+  function updateRemoveButtons() {
+	  const productRows = Array.from(productsDiv.querySelectorAll(".js-row"));
+
+	  // 상품 active 개수
+	  const activeProducts = productRows.filter(row => {
+	    const flag = row.querySelector(".js-active-flag");
+	    return flag && flag.value === "true" && row.style.display !== "none";
+	  });
+
+	  productRows.forEach(row => {
+	    const btn = row.querySelector(".js-remove-row");
+	    const flag = row.querySelector(".js-active-flag");
+
+	    if (!btn || !flag) return;
+
+	    // 상품 영역이면 최소 1개 유지
+	    if (row.closest("#products")) {
+	      if (activeProducts.length <= 1 && flag.value === "true") {
+	        btn.style.display = "none";
+	      } else {
+	        btn.style.display = "";
+	      }
+	    }
+	  });
+	}
+
+
   // ---- 상품 추가 (최대 5) ----
   const productsDiv = document.getElementById('products');
   const addProductBtn = document.getElementById('addProductBtn');
 
-  // 현재 렌더된 상품 개수
+  // "새로 만드는 idx"는 계속 증가시켜도 됨(이름 충돌 방지)
   let productIndex = productsDiv.querySelectorAll('.box').length;
 
   addProductBtn.addEventListener('click', () => {
-    if (productIndex >= 5) return alert('상품은 최대 5개까지 가능해.');
+    // active 기준으로 제한 체크
+    const activeCount = countActiveRows(productsDiv);
+    if (activeCount >= 5) return alert('상품은 최대 5개까지 가능합니다.');
+
+    // 숨긴 칸 재활용 가능하면 복구하고 끝
+    if (reviveOneHiddenRow(productsDiv)){
+    	updateRemoveButtons();
+    	return;
+    } 
+
+    // 없으면 새로 생성
     const idx = productIndex++;
 
     const box = document.createElement('div');
-    box.className = 'box';
+    box.className = 'box js-row';
     box.innerHTML = `
       <div class="row">
         <label>상품명</label>
-        <input type="text" name="products[${idx}].name" placeholder="선택">
+        <input type="hidden" name="products[${idx}].active" value="true" class="js-active-flag">
+        <input type="text" class="js-input" name="products[${idx}].name" placeholder="선택">
+
         <label>단가</label>
-        <input type="number" min="0" name="products[${idx}].price" value="0">
+        <input type="number" class="js-input" min="0" name="products[${idx}].price" value="0">
+
         <label>수량</label>
-        <input type="number" min="1" name="products[${idx}].quantity" value="1">
+        <input type="number" class="js-input" min="1" name="products[${idx}].quantity" value="1">
       </div>
+
       <div class="row">
         <label>상품 할인</label>
-        <select name="products[${idx}].discountType">
+        <select class="js-input" name="products[${idx}].discountType">
           <option value="none" selected>없음</option>
           <option value="fixed">정액(원)</option>
           <option value="percent">정률(%)</option>
         </select>
-        <input type="number" min="0" step="0.01" name="products[${idx}].discountValue" value="0">
+        <input type="number" class="js-input" min="0" step="0.01" name="products[${idx}].discountValue" value="0">
+      </div>
+
+      <div class="row">
+        <button type="button" class="btn-remove js-remove-row">칸 지우기</button>
       </div>
     `;
     productsDiv.appendChild(box);
+    updateRemoveButtons();
   });
 
   // ---- 쿠폰 추가 (최대 3) ----
   const couponsDiv = document.getElementById('coupons');
   const addCouponBtn = document.getElementById('addCouponBtn');
-
   let couponIndex = couponsDiv.querySelectorAll('.box').length;
 
   addCouponBtn.addEventListener('click', () => {
-    if (couponIndex >= 3) return alert('쿠폰은 최대 3개까지 가능해.');
+    // active 기준으로 제한 체크
+    const activeCount = countActiveRows(couponsDiv);
+    if (activeCount >= 3) return alert('쿠폰은 최대 3개까지 가능합니다.');
+
+    // 숨긴 칸 재활용
+    if (reviveOneHiddenRow(couponsDiv)) return;
+
+    // 없으면 새로 생성
     const idx = couponIndex++;
 
     const box = document.createElement('div');
-    box.className = 'box';
+    box.className = 'box js-row';
     box.innerHTML = `
       <div class="row">
         <label>쿠폰명</label>
-        <input type="text" name="coupons[${idx}].name" placeholder="선택">
+        <input type="hidden" name="coupons[${idx}].active" value="true" class="js-active-flag">
+        <input type="text" class="js-input" name="coupons[${idx}].name" placeholder="선택">
+
         <label>타입</label>
-        <select name="coupons[${idx}].type">
+        <select class="js-input" name="coupons[${idx}].type">
           <option value="fixed" selected>정액(원)</option>
           <option value="percent">정률(%)</option>
         </select>
+
         <label>값</label>
-        <input type="number" min="0" step="0.01" name="coupons[${idx}].value" value="0">
+        <input type="number" class="js-input" min="0" step="0.01" name="coupons[${idx}].value" value="0">
       </div>
+
       <div class="row">
         <label>최소 구매금액</label>
-        <input type="number" min="0" name="coupons[${idx}].minSpend" value="0">
+        <input type="number" class="js-input" min="0" name="coupons[${idx}].minSpend" value="0">
+
         <label>최대 할인 한도(선택)</label>
-        <input type="number" min="0" name="coupons[${idx}].maxDiscount" value="0">
+        <input type="number" class="js-input" min="0" name="coupons[${idx}].maxDiscount" value="0">
+      </div>
+
+      <div class="row">
+        <button type="button" class="btn-remove js-remove-row">칸 지우기</button>
       </div>
     `;
     couponsDiv.appendChild(box);
   });
+
+  // ---- 칸 지우기(숨김) : 상품/쿠폰 공통 ----
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest(".js-remove-row");
+    if (!btn) return;
+
+    const box = btn.closest(".js-row");
+    if (!box) return;
+    
+    // 상품인지 쿠폰인지 구분
+    const isProduct = box.closest("#products") !== null;
+    const container = isProduct ? productsDiv : couponsDiv;
+    
+ 	// 상품이면 최소 1개는 유지
+    if (isProduct) {
+      const activeCount = countActiveRows(container);
+      if (activeCount <= 1) {
+        alert("상품은 최소 1개 이상 있어야 합니다.");
+        return;
+      }
+    }
+
+    // active=false
+    const flag = box.querySelector(".js-active-flag");
+    if (flag) flag.value = "false";
+
+    // 입력 disable + 값 초기화
+    box.querySelectorAll(".js-input").forEach((el) => {
+      el.value = "";
+      el.disabled = true;
+    });
+
+    // 화면 숨김
+    box.style.display = "none";
+    updateRemoveButtons();
+  });
+  
+  // 서버 렌더링 후(페이지 로드) active=false row 다시 숨김 처리
+  syncHiddenRows(productsDiv);
+  syncHiddenRows(couponsDiv);
+  
+  //상품갯수에 따라 삭제 버튼 업데이트
+  updateRemoveButtons();
 </script>
+
 </body>
 </html>

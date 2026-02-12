@@ -19,14 +19,7 @@ public class DiscountController {
     public String home(Model model) {
         DiscountForm form = new DiscountForm();
 
-        // 기본 상품 1개는 넣어둠
-        ProductItem p = new ProductItem();
-        p.setName("상품1");
-        p.setPrice(10000);
-        p.setQuantity(1);
-        p.setDiscountType("none");
-        p.setDiscountValue(0.0);
-        form.getProducts().add(p);
+        form.getProducts().add(new ProductItem());
 
         form.setThresholdAmount(0);
         form.setThresholdOff(0);
@@ -41,10 +34,13 @@ public class DiscountController {
 
     @PostMapping("/calculate")
     public String calculate(@ModelAttribute("discountForm") DiscountForm form, Model model) {
-        if (form.getProducts() == null || form.getProducts().isEmpty()) {
-            model.addAttribute("error", "상품을 최소 1개 이상 입력해줘.");
-            return "index";
-        }
+    	boolean hasActiveProduct = form.getProducts() != null &&
+    	            form.getProducts().stream().anyMatch(ProductItem::isActive);
+
+    	if (!hasActiveProduct) {
+    	        model.addAttribute("error", "상품을 최소 1개 이상 입력해주세요.");
+    	        return "index";
+    	    }
 
         DiscountResult result = calculatorService.calculateBestStrategy(form);
         model.addAttribute("result", result);

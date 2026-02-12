@@ -24,7 +24,7 @@ public class DiscountForm {
     // false: 쿠폰 → 금액대 할인
     private Boolean promoBeforeCoupon;
 
-    // 배송 정책
+    // 배송 관련
     private Integer shippingFee;
     private Integer freeShippingThreshold;
 }

@@ -1,12 +1,14 @@
 package com.jiwoo.noaats.service;
 
 import com.jiwoo.noaats.domain.Coupon;
+
 import com.jiwoo.noaats.domain.DiscountResult;
 import com.jiwoo.noaats.domain.ProductItem;
 import com.jiwoo.noaats.form.DiscountForm;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -101,7 +103,7 @@ public class DiscountCalculatorService {
                 else b.add(products.get(i));
             }
 
-            // 둘 중 하나가 비면 “나눠 사기” 의미가 약하니 제외(원하면 포함 가능)
+            // 둘 중 하나가 비면 '나눠 사기' 의미가 약하니 제외
             if (a.isEmpty() || b.isEmpty()) continue;
 
             for (Coupon ca : couponOptions) {
@@ -122,7 +124,7 @@ public class DiscountCalculatorService {
 
         // 분할이 불가능하거나(상품 1종 등) 전부 제외된 경우 대비
         if (best == null) {
-            // “나눠 사기 불가”로 표시
+            // "나눠 사기 불가"로 표시
             OrderCalc single = bestForOneOrder(products, coupons, thAmount, thOff, promoBeforeCoupon, shippingFee, freeShip);
             best = new SplitCalc(Long.MAX_VALUE / 4, "나눠 구매 후보 없음(상품이 1종이거나 분할 조건 제외).");
         }
@@ -257,7 +259,10 @@ public class DiscountCalculatorService {
     private List<ProductItem> safeProducts(List<ProductItem> in) {
         if (in == null) return List.of();
         return in.stream()
-                .filter(p -> p != null && nz(p.getPrice()) >= 0 && nz(p.getQuantity()) > 0)
+                .filter(Objects::nonNull)
+                .filter(ProductItem::isActive) 
+                .filter(p -> nz(p.getPrice()) >= 0)
+                .filter(p -> nz(p.getQuantity()) > 0)
                 .limit(5)
                 .collect(Collectors.toList());
     }
@@ -265,7 +270,10 @@ public class DiscountCalculatorService {
     private List<Coupon> safeCoupons(List<Coupon> in) {
         if (in == null) return List.of();
         return in.stream()
-                .filter(c -> c != null && c.getType() != null && nzD(c.getValue()) > 0)
+                .filter(Objects::nonNull)
+                .filter(Coupon::isActive)    
+                .filter(c -> c.getType() != null)
+                .filter(c -> nzD(c.getValue()) > 0)
                 .limit(3)
                 .collect(Collectors.toList());
     }

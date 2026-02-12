@@ -28,3 +28,7 @@ pre{
 	padding:12px; 
 	overflow:auto;
 }
+.btn-remove{
+  margin-left: 8px;
+  cursor: pointer;
+}
