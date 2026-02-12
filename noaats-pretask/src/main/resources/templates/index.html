@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" th:href="@{/style.css}">
+	<title>할인 전략 계산기</title>
+</head>
+<body>
+<h2>가장 할인율 높이는 기댓값 찾기</h2>
+
+<p th:if="${error}" class="err" th:text="${error}"></p>
+
+<form th:action="@{/calculate}" method="post" th:object="${discountForm}">
+
+  <fieldset>
+    <legend>상품</legend>
+
+    <div id="products">
+      <div class="box" th:each="p, stat : *{products}">
+        <div class="row">
+          <label>상품명</label>
+          <input type="text" th:field="*{products[__${stat.index}__].name}" placeholder="선택">
+          <label>단가</label>
+          <input type="number" min="0" th:field="*{products[__${stat.index}__].price}">
+          <label>수량</label>
+          <input type="number" min="1" th:field="*{products[__${stat.index}__].quantity}">
+        </div>
+
+        <div class="row">
+          <label>상품 할인</label>
+          <select th:field="*{products[__${stat.index}__].discountType}">
+            <option value="none">없음</option>
+            <option value="fixed">정액(원)</option>
+            <option value="percent">정률(%)</option>
+          </select>
+          <input type="number" min="0" step="0.01" th:field="*{products[__${stat.index}__].discountValue}">
+        </div>
+      </div>
+    </div>
+
+  </fieldset>
+
+  <hr>
+  <button type="submit">계산하기</button>
+  <button type="button" id="resetBtn">초기화</button>
+</form>
+
+<hr>
+
+<div th:if="${result != null}">
+  <h3>결과</h3>
+  <p><b th:text="${result.summary}"></b></p>
+  <p>상품합계(할인 전): <b th:text="${#numbers.formatInteger(result.baseMerchandise,3,'COMMA')} + '원'"></b></p>
+</div>
+
+</body>
+</html>
