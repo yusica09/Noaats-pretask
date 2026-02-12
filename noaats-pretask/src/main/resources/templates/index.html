@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+<link rel="stylesheet" th:href="@{/style.css}">
 
 <head>
-<meta charset="UTF-8">
-<link rel="stylesheet" th:href="@{/style.css}">
-	<title>할인 전략 계산기</title>
+  <meta charset="UTF-8">
+  <title>할인 전략 계산기</title>
 </head>
 <body>
 <h2>가장 할인율 높이는 기댓값 찾기</h2>
@@ -14,7 +14,7 @@
 <form th:action="@{/calculate}" method="post" th:object="${discountForm}">
 
   <fieldset>
-    <legend>상품</legend>
+    <legend>상품 (최대 5종)</legend>
 
     <div id="products">
       <div class="box" th:each="p, stat : *{products}">
@@ -39,6 +39,55 @@
       </div>
     </div>
 
+    <button type="button" id="addProductBtn">상품 추가하기</button>
+    <div style="color:#666;font-size:12px;">※ 분할 계산은 “상품 종류(라인)” 단위로만 나눕니다. 수량을 쪼개는 분할은 확장 기능으로 추가 가능합니다.</div>
+  </fieldset>
+
+  <fieldset>
+    <legend>보유 쿠폰 (최대 3장)</legend>
+
+    <div id="coupons">
+      <div class="box" th:each="c, stat : *{coupons}">
+        <div class="row">
+          <label>쿠폰명</label>
+          <input type="text" th:field="*{coupons[__${stat.index}__].name}" placeholder="선택">
+          <label>타입</label>
+          <select th:field="*{coupons[__${stat.index}__].type}">
+            <option value="fixed">정액(원)</option>
+            <option value="percent">정률(%)</option>
+          </select>
+          <label>값</label>
+          <input type="number" min="0" step="0.01" th:field="*{coupons[__${stat.index}__].value}">
+        </div>
+        <div class="row">
+          <label>최소 구매금액</label>
+          <input type="number" min="0" th:field="*{coupons[__${stat.index}__].minSpend}">
+          <label>최대 할인 한도(선택)</label>
+          <input type="number" min="0" th:field="*{coupons[__${stat.index}__].maxDiscount}">
+        </div>
+      </div>
+    </div>
+
+    <button type="button" id="addCouponBtn">쿠폰 추가하기</button>
+    <div style="color:#666;font-size:12px;">※ 쿠폰은 “보유 목록”이고, 주문당 1장만 사용합니다. 한 번 사용한 쿠폰은 재사용 불가로 계산합니다.</div>
+  </fieldset>
+
+  <fieldset>
+    <legend>프로모션(금액대 할인)</legend>
+    <div class="row">
+      <label>조건 금액</label>
+      <input type="number" min="0" th:field="*{thresholdAmount}">
+      <label>할인액</label>
+      <input type="number" min="0" th:field="*{thresholdOff}">
+    </div>
+
+    <div class="row">
+      <label>적용 순서</label>
+      <select th:field="*{promoBeforeCoupon}">
+        <option th:value="true">금액대 할인 → 쿠폰</option>
+        <option th:value="false">쿠폰 → 금액대 할인</option>
+      </select>
+    </div>
   </fieldset>
 
   <hr>
@@ -52,7 +101,83 @@
   <h3>결과</h3>
   <p><b th:text="${result.summary}"></b></p>
   <p>상품합계(할인 전): <b th:text="${#numbers.formatInteger(result.baseMerchandise,3,'COMMA')} + '원'"></b></p>
+  <p>최종 결제: <b th:text="${#numbers.formatInteger(result.finalPay,3,'COMMA')} + '원'"></b></p>
+  <p>절감액: <b th:text="${#numbers.formatInteger(result.totalSaved,3,'COMMA')} + '원'"></b></p>
+  <p>절감률(기준 대비): <b th:text="${result.savedRate} + '%'"></b></p>
+
+  <h4>계산 플랜(검증용)</h4>
+  <pre th:text="${result.detail}"></pre>
 </div>
 
+<script>
+  // ---- 상품 추가 (최대 5) ----
+  const productsDiv = document.getElementById('products');
+  const addProductBtn = document.getElementById('addProductBtn');
+
+  // 현재 렌더된 상품 개수
+  let productIndex = productsDiv.querySelectorAll('.box').length;
+
+  addProductBtn.addEventListener('click', () => {
+    if (productIndex >= 5) return alert('상품은 최대 5개까지 가능해.');
+    const idx = productIndex++;
+
+    const box = document.createElement('div');
+    box.className = 'box';
+    box.innerHTML = `
+      <div class="row">
+        <label>상품명</label>
+        <input type="text" name="products[${idx}].name" placeholder="선택">
+        <label>단가</label>
+        <input type="number" min="0" name="products[${idx}].price" value="0">
+        <label>수량</label>
+        <input type="number" min="1" name="products[${idx}].quantity" value="1">
+      </div>
+      <div class="row">
+        <label>상품 할인</label>
+        <select name="products[${idx}].discountType">
+          <option value="none" selected>없음</option>
+          <option value="fixed">정액(원)</option>
+          <option value="percent">정률(%)</option>
+        </select>
+        <input type="number" min="0" step="0.01" name="products[${idx}].discountValue" value="0">
+      </div>
+    `;
+    productsDiv.appendChild(box);
+  });
+
+  // ---- 쿠폰 추가 (최대 3) ----
+  const couponsDiv = document.getElementById('coupons');
+  const addCouponBtn = document.getElementById('addCouponBtn');
+
+  let couponIndex = couponsDiv.querySelectorAll('.box').length;
+
+  addCouponBtn.addEventListener('click', () => {
+    if (couponIndex >= 3) return alert('쿠폰은 최대 3개까지 가능해.');
+    const idx = couponIndex++;
+
+    const box = document.createElement('div');
+    box.className = 'box';
+    box.innerHTML = `
+      <div class="row">
+        <label>쿠폰명</label>
+        <input type="text" name="coupons[${idx}].name" placeholder="선택">
+        <label>타입</label>
+        <select name="coupons[${idx}].type">
+          <option value="fixed" selected>정액(원)</option>
+          <option value="percent">정률(%)</option>
+        </select>
+        <label>값</label>
+        <input type="number" min="0" step="0.01" name="coupons[${idx}].value" value="0">
+      </div>
+      <div class="row">
+        <label>최소 구매금액</label>
+        <input type="number" min="0" name="coupons[${idx}].minSpend" value="0">
+        <label>최대 할인 한도(선택)</label>
+        <input type="number" min="0" name="coupons[${idx}].maxDiscount" value="0">
+      </div>
+    `;
+    couponsDiv.appendChild(box);
+  });
+</script>
 </body>
 </html>
