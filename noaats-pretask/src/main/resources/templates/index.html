@@ -90,6 +90,16 @@
     </div>
   </fieldset>
 
+  <fieldset>
+    <legend>배송</legend>
+    <div class="row">
+      <label>배송비</label>
+      <input type="number" min="0" th:field="*{shippingFee}">
+      <label>무료배송 기준(이상)</label>
+      <input type="number" min="0" th:field="*{freeShippingThreshold}">
+    </div>
+  </fieldset>
+
   <hr>
   <button type="submit">계산하기</button>
   <button type="button" id="resetBtn">초기화</button>
@@ -101,7 +111,7 @@
   <h3>결과</h3>
   <p><b th:text="${result.summary}"></b></p>
   <p>상품합계(할인 전): <b th:text="${#numbers.formatInteger(result.baseMerchandise,3,'COMMA')} + '원'"></b></p>
-  <p>최종 결제: <b th:text="${#numbers.formatInteger(result.finalPay,3,'COMMA')} + '원'"></b></p>
+  <p>최종 결제(배송 포함): <b th:text="${#numbers.formatInteger(result.finalPay,3,'COMMA')} + '원'"></b></p>
   <p>절감액: <b th:text="${#numbers.formatInteger(result.totalSaved,3,'COMMA')} + '원'"></b></p>
   <p>절감률(기준 대비): <b th:text="${result.savedRate} + '%'"></b></p>
 
