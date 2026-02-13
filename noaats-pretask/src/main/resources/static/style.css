@@ -1,51 +1,350 @@
+/* ==============================
+   Clean UI (Left variable / Right fixed)
+   + Pill section titles
+   ============================== */
+
+:root{
+  --bg: #f6f2ff;              /* 더 연한 연보라 */
+  --card: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --line: rgba(15,23,42,.12);
+
+  --primary: #2f6df6;
+  --primary2: #3f86ff;
+
+  --darkbtn: #2b3442;
+  --darkbtn2: #232b37;
+
+  --shadow: 0 10px 26px rgba(15,23,42,.10);
+  --shadow2: 0 6px 16px rgba(15,23,42,.08);
+
+  --r: 14px;
+}
+
+/* ---- base ---- */
+*{ box-sizing:border-box; }
+html, body{ height:100%; }
+
 body{
-	font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-	margin:24px;
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  padding: 28px;
+  min-height: 100vh;
 }
-fieldset{
-	margin:12px 0; 
-	padding:12px;
+
+.container{
+  max-width: 980px;
+  margin: 0 auto;
 }
-.row{
-	display:flex; 
-	gap:8px; 
-	flex-wrap:wrap; 
-	margin:8px 0;
+
+/* ---- title ---- */
+h2{
+  margin: 6px 0 18px;
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  text-align: center;
 }
-input, select{
-	padding:6px;
+h2::after{
+  content:"";
+  display:block;
+  width: 74px;
+  height: 5px;
+  margin: 12px auto 0;
+  border-radius: 999px;
+  background: rgba(15,23,42,.35);
 }
-.box{
-	border:1px solid #ddd; 
-	padding:10px; 
-	margin:8px 0;
-}
+
+/* ---- error ---- */
 .err{
-	color:#b00020;
+  margin: 10px 0 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(220,38,38,.10);
+  border: 1px solid rgba(220,38,38,.20);
+  color: #7f1d1d;
+  font-weight: 800;
 }
-pre{
-	background:#f7f7f7; 
-	padding:12px; 
-	overflow:auto;
+
+/* form wrapper */
+form{ background: transparent; }
+
+/* ==========================
+   Layout (recommended)
+   ========================== */
+.layout{
+  display: grid;
+  grid-template-columns: 1.2fr .8fr; /* 왼쪽 더 넓게 */
+  gap: 18px;
+  align-items: start;
 }
+
+.col{
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* 오른쪽 컬럼 고정(선택) */
+@media (min-width: 900px){
+  .col-right{
+    position: sticky;
+    top: 18px;
+  }
+}
+
+/* ==========================
+   Cards (fieldset.card / section.card)
+   ========================== */
+.card{
+  background: var(--card);
+  border-radius: var(--r);
+  box-shadow: var(--shadow2);
+  padding: 18px;
+}
+
+fieldset.card{
+  border: 0;
+  margin: 0;
+  padding: 18px;
+  position: relative;  /* pill 위치를 위해 */
+  overflow: visible;   /* pill이 위로 올라와도 보이게 */
+}
+
+fieldset.card > legend{
+  float: none;
+  display: inline-block;
+  width: auto;
+
+  margin: 0;
+  padding: 6px 12px;
+
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+
+  background: var(--card);
+  border: 0;
+  border-radius: 999px;
+
+  /* 카드 위에 살짝 겹치게 */
+  position: absolute;
+  top: -9px;
+  left: 16px;
+
+  box-shadow: none;
+  outline: 1px solid rgba(15,23,42,.10);
+}
+
+/* pill 때문에 위쪽 공간 확보 */
+fieldset.card{
+  padding-top: 24px;
+}
+
+/* helper text */
+fieldset.card > div[style*="font-size:12px"]{
+  margin-top: 10px;
+  color: var(--muted) !important;
+  font-size: 12px !important;
+  line-height: 1.45;
+}
+
+/* ==========================
+   Rows / inputs
+   ========================== */
+.row{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+  margin: 10px 0;
+  align-items: center;
+}
+
+.row label{
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+input, select, button{ font: inherit; }
+
+input[type="text"],
+input[type="number"],
+select{
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(15,23,42,.12);
+  background: #fff;
+  outline: none;
+  transition: box-shadow .15s ease, border-color .15s ease;
+}
+
+input::placeholder{ color: rgba(100,116,139,.8); }
+
+input:focus,
+select:focus{
+  border-color: rgba(47,109,246,.55);
+  box-shadow: 0 0 0 4px rgba(47,109,246,.14);
+}
+
+/* 상품명은 한 줄 꽉 */
+#products .box .row:first-child input[type="text"]{
+  grid-column: 1 / -1;
+}
+
+/* inside item boxes */
+.box{
+  border: 1px solid rgba(15,23,42,.10);
+  border-radius: 14px;
+  padding: 14px;
+  margin: 12px 0;
+  background: #fff;
+}
+
+/* ==========================
+   Discount value / unit
+   ========================== */
+.discount-value-wrap{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* “없음”일 때 input 자체 숨김(테두리/공간 제거) */
+.js-discount-value.is-disabled{
+  display: none !important;
+}
+.js-discount-value.is-disabled + .unit{
+  display: none !important;
+}
+
+/* unit은 글자만 */
+.discount-value-wrap .unit{
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--muted);
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+/* ==========================
+   Buttons
+   ========================== */
+
+/* add buttons (카드 안 전체 폭, 하지만 너무 크지 않게) */
+#addProductBtn,
+#addCouponBtn{
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 0;
+  background: linear-gradient(180deg, var(--darkbtn), var(--darkbtn2));
+  color: #fff;
+  font-weight: 900;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 10px 18px rgba(15,23,42,.18);
+  margin-top: 10px;
+}
+
 .btn-remove{
-  margin-left: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(220,38,38,.22);
+  background: rgba(220,38,38,.08);
+  color: #b91c1c;
+  font-weight: 900;
   cursor: pointer;
 }
-.js-discount-value.is-disabled {
-  background: #f3f3f3;
-  color: #888;
-  cursor: not-allowed;
+
+/* actions center */
+.form-actions{
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 18px;
 }
 
-.discount-value-wrap {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.form-actions button{
+  min-width: 190px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 0;
+  font-weight: 900;
+  cursor: pointer;
 }
 
-.discount-value-wrap .unit {
-  font-size: 14px;
-  color: #555;
+.form-actions button[type="submit"]{
+  background: linear-gradient(135deg, var(--primary2), var(--primary));
+  color: #fff;
+  box-shadow: 0 12px 22px rgba(47,109,246,.22);
 }
 
+#resetBtn{
+  background: linear-gradient(180deg, #a8b0bc, #8e97a6);
+  color: #fff;
+  box-shadow: 0 10px 18px rgba(15,23,42,.12);
+}
+
+/* ==========================
+   Result card (right column)
+   ========================== */
+.result.card{
+  border: 1px solid rgba(15,23,42,.10);
+}
+
+.result.card h3{
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.result-summary b{
+  display: inline-block;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(47,109,246,.10);
+  border: 1px solid rgba(47,109,246,.18);
+}
+
+.result-empty{
+  color: rgba(100,116,139,.9);
+  font-weight: 800;
+  font-size: 13px;
+  padding: 8px 0;
+}
+
+pre{
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(15,23,42,.04);
+  border: 1px solid rgba(15,23,42,.10);
+  overflow: auto;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+/* ==========================
+   Responsive
+   ========================== */
+@media (max-width: 900px){
+  body{ padding: 16px; }
+
+  .layout{
+    grid-template-columns: 1fr;
+  }
+
+  .col-right{
+    position: static;
+  }
+
+  .form-actions button{
+    min-width: 150px;
+  }
+}

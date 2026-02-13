@@ -25,9 +25,6 @@ public class DiscountController {
         form.setThresholdOff(0);
         form.setPromoBeforeCoupon(true);
 
-        form.setShippingFee(3000);
-        form.setFreeShippingThreshold(30000);
-
         model.addAttribute("discountForm", form);
         return "index";
     }

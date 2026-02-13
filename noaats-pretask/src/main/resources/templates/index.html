@@ -2,18 +2,20 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
-  <title>할인 전략 계산기</title>
+  <title>최적 구매 전략 계산기</title>
   <link rel="stylesheet" th:href="@{/style.css}">
 </head>
 
 <body>
-<h2>가장 할인율 높이는 기댓값 찾기</h2>
+<main class="container">
+<h2>실질 할인율과 기대값을 비교하여 최적 전략 도출</h2>
 
 <p th:if="${error}" class="err" th:text="${error}"></p>
 
 <form th:action="@{/calculate}" method="post" th:object="${discountForm}">
-
-  <fieldset>
+ <div class="layout">
+ <section class="col col-left">
+  <fieldset class="card">
     <legend>상품 (최대 5종)</legend>
 
     <div id="products">
@@ -58,7 +60,7 @@
     </div>
   </fieldset>
 
-  <fieldset>
+  <fieldset class="card">
     <legend>보유 쿠폰 (최대 3장)</legend>
 
     <div id="coupons">
@@ -99,8 +101,10 @@
       ※ 쿠폰은 “보유 목록”이고, 주문당 1장만 사용합니다. 한 번 사용한 쿠폰은 재사용 불가로 계산합니다.
     </div>
   </fieldset>
-
-  <fieldset>
+ </section>
+ 
+ <section class="col col-right">
+  <fieldset class="card">
     <legend>프로모션(금액대 할인)</legend>
     <div class="row">
       <label>조건 금액</label>
@@ -118,7 +122,7 @@
     </div>
   </fieldset>
 
-  <fieldset>
+  <fieldset class="card">
     <legend>배송</legend>
     <div class="row">
       <label>배송비</label>
@@ -127,25 +131,55 @@
       <input type="number" class="js-input" min="0" th:field="*{freeShippingThreshold}">
     </div>
   </fieldset>
+  
+  <!-- ✅ 결과 섹션(여기에 결과가 보이게) -->
+  <section class="result card" id="resultSection">
+   	<div th:if="${result == null}" class="result-empty">
+      계산 결과가 여기 표시됩니다.
+    </div>
 
-  <hr>
-  <button type="submit">계산하기</button>
-  <button type="button" id="resetBtn">초기화</button>
+    <div th:if="${result != null}">
+      <h3>결과</h3>
+      <p class="result-summary"><b th:text="${result.summary}"></b></p>
+      <p>기준 상품금액(상품개별할인 적용):<b th:text="${#numbers.formatInteger(result.baseMerchandise,3,'COMMA')} + '원'"></b></p>
+      <p>기준 결제(상품+배송): 
+  		<b th:text="${#numbers.formatInteger(result.basePay,3,'COMMA')} + '원'"></b>
+	  </p>
+      <br>
+      <p>최종 결제(배송 포함): <b th:text="${#numbers.formatInteger(result.finalPay,3,'COMMA')} + '원'"></b></p>
+      <p>기대값(절감액): <b th:text="${#numbers.formatInteger(result.totalSaved,3,'COMMA')} + '원'"></b></p>
+      <p>실질 할인율: <b th:text="${result.savedRate} + '%'"></b></p>
+
+      <h4>계산 플랜(검증용)</h4>
+      <pre th:text="${result.detail}"></pre>
+     </div>
+   </section>
+  </section>
+ </div>
+
+  <div class="form-actions">
+    <button type="submit">계산하기</button>
+    <button type="button" id="resetBtn">초기화</button>
+  </div>
 </form>
 
-<hr>
-
-<div th:if="${result != null}">
+<!--  
+<div th:if="${result != null}" class="result-card">
   <h3>결과</h3>
   <p><b th:text="${result.summary}"></b></p>
-  <p>상품합계(할인 전): <b th:text="${#numbers.formatInteger(result.baseMerchandise,3,'COMMA')} + '원'"></b></p>
+  <p>기준 상품금액(상품개별할인 적용):<b th:text="${#numbers.formatInteger(result.baseMerchandise,3,'COMMA')} + '원'"></b></p>
+  <p>기준 결제(상품+배송): 
+  	<b th:text="${#numbers.formatInteger(result.basePay,3,'COMMA')} + '원'"></b>
+  </p>
+  <br>
   <p>최종 결제(배송 포함): <b th:text="${#numbers.formatInteger(result.finalPay,3,'COMMA')} + '원'"></b></p>
-  <p>절감액: <b th:text="${#numbers.formatInteger(result.totalSaved,3,'COMMA')} + '원'"></b></p>
-  <p>절감률(기준 대비): <b th:text="${result.savedRate} + '%'"></b></p>
+  <p>기대값(절감액): <b th:text="${#numbers.formatInteger(result.totalSaved,3,'COMMA')} + '원'"></b></p>
+  <p>실질 할인율: <b th:text="${result.savedRate} + '%'"></b></p>
 
   <h4>계산 플랜(검증용)</h4>
   <pre th:text="${result.detail}"></pre>
 </div>
+-->
 
 <script>
   // ---- 공통 유틸: 활성 칸 개수 세기 / 숨겨진 칸 복구 ----
@@ -197,7 +231,9 @@
     // 입력 활성화 + 값 초기화(복구 시 깔끔하게 비우는게 UX 좋음)
     hidden.querySelectorAll(".js-input").forEach(el => {
       el.disabled = false;
-      el.value = "";
+      
+      if (el.type === "number") el.value = 0;
+      else el.value = "";
     });
 
     // select는 value=""가 안 먹을 수 있으니, option 첫 값으로 초기화(선택)
@@ -437,5 +473,20 @@
 
 </script>
 
+<script th:if="${result != null}">
+  window.addEventListener("load", () => {
+    const el = document.getElementById("resultSection");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+</script>
+
+<script th:inline="javascript">
+  document.getElementById("resetBtn")?.addEventListener("click", () => {
+    // context-path 고려한 안전한 이동
+    window.location.href = /*[[@{/}]]*/ "/";
+  });
+</script>
+
+</main>
 </body>
 </html>

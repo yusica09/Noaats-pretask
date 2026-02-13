@@ -25,12 +25,15 @@ public class DiscountCalculatorService {
         int thAmount = nz(form.getThresholdAmount());
         int thOff = nz(form.getThresholdOff());
 
-        long baseMerch = productsBase(products); // (단가 * 수량) 합
-        long baselinePay = baseMerch + shippingFee; // 아무 혜택 없고 배송비도 내는 기준(기본 기준)
+        // 1) 상품 자체 할인 적용 후 금액을 기준으로 사용
+        long baselineMerch = applyProductDiscounts(products);
+        // 2) 무료배송 기준도 동일 정책으로 판단
+        long baselineShipping = (freeShip > 0 && baselineMerch >= freeShip) ? 0 : shippingFee;
+        // 기준 결제 금액
+        long baselinePay = baselineMerch + baselineShipping;
 
         // 1) 한 번에 구매(1주문): 쿠폰 0~1개 중 최적
         OrderCalc bestSingle = bestForOneOrder(products, coupons, thAmount, thOff, promoBeforeCoupon, shippingFee, freeShip);
-
         // 2) 두 번으로 나눠 구매(2주문): 상품 라인 단위 분할(최대 5개 → 32개)
         SplitCalc bestSplit = bestForTwoOrders(products, coupons, thAmount, thOff, promoBeforeCoupon, shippingFee, freeShip);
 
@@ -49,7 +52,9 @@ public class DiscountCalculatorService {
                 baselinePay, bestSingle, bestSplit, splitIsBetter);
 
         return DiscountResult.builder()
-                .baseMerchandise(baseMerch)
+                .baseMerchandise(baselineMerch)
+                .baseShipping(baselineShipping)
+                .basePay(baselinePay)
                 .finalPay(finalPay)
                 .totalSaved(saved)
                 .savedRate(round2(rate))
@@ -276,15 +281,17 @@ public class DiscountCalculatorService {
             long discountedLine = baseLine;
 
             if ("fixed".equals(type)) {
-                // 1개당 정액 할인
-                long offPerUnit = Math.max(0, Math.round(v));
+                // 1개당 정액 할인 - 소수점 이하 절사
+                long offPerUnit = Math.max(0, (long) v);
                 long totalOff = offPerUnit * qty;
                 discountedLine = Math.max(0, baseLine - totalOff);
 
             } else if ("percent".equals(type)) {
                 // % 할인 (라인 전체 적용과 동일 결과)
                 double pct = Math.max(0, Math.min(100, v));
-                discountedLine = Math.max(0, Math.round(baseLine * (1 - pct / 100.0)));
+                // 할인 후 금액을 소수점 이하 절사
+                discountedLine = (long) (baseLine * (1 - pct / 100.0));
+                discountedLine = Math.max(0, discountedLine);
             }
 
             sum += discountedLine;
@@ -312,11 +319,14 @@ public class DiscountCalculatorService {
         long discounted = amount;
 
         if ("fixed".equals(type)) {
-            long off = Math.max(0, Math.round(value));
+        	// 정액 할인은 소수점 이하 절사
+            long off = Math.max(0, (long) value);
             discounted = Math.max(0, amount - off);
         } else if ("percent".equals(type)) {
             double pct = Math.max(0, Math.min(100, value));
-            long off = Math.round(amount * (pct / 100.0));
+            // 퍼센트 할인은 소수점 이하 절사
+            long off = (long) (amount * (pct / 100.0));
+            
             if (cap > 0) off = Math.min(off, cap);
             discounted = Math.max(0, amount - off);
         }
@@ -348,6 +358,7 @@ public class DiscountCalculatorService {
 
     private int nz(Integer v) { return v == null ? 0 : v; }
     private double nzD(Double v) { return v == null ? 0.0 : v; }
+    // savedRate는 표시용 퍼센트이므로 소수점 2자리 반올림
     private double round2(double v) { return Math.round(v * 100.0) / 100.0; }
 
     private String buildDetail(List<ProductItem> products, List<Coupon> coupons,
