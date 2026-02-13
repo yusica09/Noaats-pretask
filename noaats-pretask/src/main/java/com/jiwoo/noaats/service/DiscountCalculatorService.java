@@ -18,15 +18,15 @@ public class DiscountCalculatorService {
         List<ProductItem> products = safeProducts(form.getProducts());
         List<Coupon> coupons = safeCoupons(form.getCoupons());
 
-        boolean promoBeforeCoupon = form.getPromoBeforeCoupon() == null || form.getPromoBeforeCoupon();
+        boolean promoBeforeCoupon = form.getPromoBeforeCoupon() == null || form.getPromoBeforeCoupon(); // true면 프로모션→쿠폰 false면 쿠폰→프로모션
         int shippingFee = nz(form.getShippingFee());
         int freeShip = nz(form.getFreeShippingThreshold());
 
         int thAmount = nz(form.getThresholdAmount());
         int thOff = nz(form.getThresholdOff());
 
-        long baseMerch = productsBase(products);
-        long baselinePay = baseMerch + shippingFee; // “아무 혜택 없고 배송비도 그냥 내는” 기준(단순 기준)
+        long baseMerch = productsBase(products); // (단가 * 수량) 합
+        long baselinePay = baseMerch + shippingFee; // 아무 혜택 없고 배송비도 내는 기준(기본 기준)
 
         // 1) 한 번에 구매(1주문): 쿠폰 0~1개 중 최적
         OrderCalc bestSingle = bestForOneOrder(products, coupons, thAmount, thOff, promoBeforeCoupon, shippingFee, freeShip);
@@ -114,24 +114,47 @@ public class DiscountCalculatorService {
                     OrderCalc orderB = calcOrder(b, cb, thAmount, thOff, promoBeforeCoupon, shippingFee, freeShip);
 
                     long total = orderA.totalPay + orderB.totalPay;
-                    String plan = "주문 A:\n" + orderA.detail + "\n\n주문 B:\n" + orderB.detail;
+                    
+                    String itemsA = itemsLabel(a);
+                    String itemsB = itemsLabel(b);
 
-                    SplitCalc candidate = new SplitCalc(total, plan);
+                    String caLabel = couponLabel(ca);
+                    String cbLabel = couponLabel(cb);
+                    
+                    String binary = toBinaryMask(mask, n);
+
+                    String namesA = simpleItemNames(a);
+                    String namesB = simpleItemNames(b);
+                    
+                    // mask 및 구성 정보까지 plan에 포함
+                    String plan = ""
+                            + String.format("mask=%s (A=[%s], B=[%s])\n", binary, namesA, namesB)
+                            + String.format("쿠폰 배치 → A: %s | B: %s\n\n", caLabel, cbLabel)
+                            + "──── 주문 A 상세 ────\n"
+                            + orderA.detail + "\n\n"
+                            + "──── 주문 B 상세 ────\n"
+                            + orderB.detail;
+
+                    SplitCalc candidate = new SplitCalc(total, plan, mask, caLabel, cbLabel, itemsA, itemsB);
+
                     if (best == null || candidate.totalPay < best.totalPay) best = candidate;
                 }
             }
         }
 
-        // 분할이 불가능하거나(상품 1종 등) 전부 제외된 경우 대비
+        // 분할이 불가능하거나(상품 1종 등) 전부 제외된 경우
         if (best == null) {
-            // "나눠 사기 불가"로 표시
-            OrderCalc single = bestForOneOrder(products, coupons, thAmount, thOff, promoBeforeCoupon, shippingFee, freeShip);
-            best = new SplitCalc(Long.MAX_VALUE / 4, "나눠 구매 후보 없음(상품이 1종이거나 분할 조건 제외).");
+            best = new SplitCalc(
+                    Long.MAX_VALUE / 4,
+                    "나눠 구매 후보 없음(상품이 1종이거나 분할 조건 제외).",
+                    -1, "N/A", "N/A", "(없음)", "(없음)"
+            );
         }
         return best;
     }
 
     private boolean sameCoupon(Coupon a, Coupon b) {
+    	// '쿠폰이 같은지' 판별 기준은 name
         // name이 없으면 객체 동일성으로
         if (a.getName() != null && b.getName() != null) return a.getName().equals(b.getName());
         return a == b;
@@ -195,6 +218,37 @@ public class DiscountCalculatorService {
         if (c.getName() != null && !c.getName().isBlank()) return c.getName();
         return c.getType() + ":" + c.getValue();
     }
+    
+    private String itemsLabel(List<ProductItem> items) {
+        if (items == null || items.isEmpty()) return "(없음)";
+        return items.stream()
+                .map(p -> {
+                    String name = (p.getName() == null || p.getName().isBlank()) ? "상품" : p.getName();
+                    int qty = nz(p.getQuantity());
+                    long line = (long) nz(p.getPrice()) * qty;
+                    return String.format("%s x%d(%,d원)", name, qty, line);
+                })
+                .collect(Collectors.joining(", "));
+    }
+    
+    private String simpleItemNames(List<ProductItem> items) {
+        if (items == null || items.isEmpty()) return "(없음)";
+        return items.stream()
+                .map(p -> (p.getName() == null || p.getName().isBlank()) ? "상품" : p.getName())
+                .collect(Collectors.joining(", "));
+    }
+    
+    // mask 확인용
+    // 이진수에서 1인 비트 = A 주문에 포함 / 0 = B 주문에 포함
+    private String toBinaryMask(int mask, int n) {
+        String s = Integer.toBinaryString(mask);
+        if (s.length() < n) {
+            s = "0".repeat(n - s.length()) + s;
+        }
+        return s;
+    }
+
+
 
     /* ------------------------
        계산 유틸
@@ -209,22 +263,36 @@ public class DiscountCalculatorService {
 
     private long applyProductDiscounts(List<ProductItem> products) {
         long sum = 0;
+
         for (ProductItem p : products) {
-            long line = (long) nz(p.getPrice()) * (long) nz(p.getQuantity());
+            long price = nz(p.getPrice());
+            long qty = nz(p.getQuantity());
+
+            long baseLine = price * qty;
+
             String type = p.getDiscountType() == null ? "none" : p.getDiscountType();
             double v = nzD(p.getDiscountValue());
 
+            long discountedLine = baseLine;
+
             if ("fixed".equals(type)) {
-                // “라인 기준” 정액 할인(원)
-                line = Math.max(0, line - Math.round(v));
+                // 1개당 정액 할인
+                long offPerUnit = Math.max(0, Math.round(v));
+                long totalOff = offPerUnit * qty;
+                discountedLine = Math.max(0, baseLine - totalOff);
+
             } else if ("percent".equals(type)) {
+                // % 할인 (라인 전체 적용과 동일 결과)
                 double pct = Math.max(0, Math.min(100, v));
-                line = Math.max(0, Math.round(line * (1 - pct / 100.0)));
+                discountedLine = Math.max(0, Math.round(baseLine * (1 - pct / 100.0)));
             }
-            sum += line;
+
+            sum += discountedLine;
         }
+
         return sum;
     }
+
 
     private long applyThresholdPromo(long amount, int threshold, int off) {
         if (threshold <= 0 || off <= 0) return amount;
@@ -342,9 +410,22 @@ public class DiscountCalculatorService {
     private static class SplitCalc {
         final long totalPay;
         final String plan;
-        SplitCalc(long totalPay, String plan) {
+        
+        // 어떤 분할이었는지 기록
+        final int mask;
+        final String couponA;
+        final String couponB;
+        final String itemsA;
+        final String itemsB;
+        
+        SplitCalc(long totalPay, String plan, int mask, String couponA, String couponB, String itemsA, String itemsB) {
             this.totalPay = totalPay;
             this.plan = plan;
+            this.mask = mask;
+            this.couponA = couponA;
+            this.couponB = couponB;
+            this.itemsA = itemsA;
+            this.itemsB = itemsB;
         }
     }
 }

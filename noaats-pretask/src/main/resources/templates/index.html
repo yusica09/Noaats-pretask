@@ -31,13 +31,17 @@
 
         <div class="row">
           <label>상품 할인</label>
-          <select class="js-input" th:field="*{products[__${stat.index}__].discountType}">
+          <select class="js-input js-discount-type" th:field="*{products[__${stat.index}__].discountType}">
             <option value="none">없음</option>
-            <option value="fixed">정액(원)</option>
+            <option value="fixed">정액(원/개)</option>
             <option value="percent">정률(%)</option>
           </select>
-          <input type="number" class="js-input" min="0" step="0.01"
-                 th:field="*{products[__${stat.index}__].discountValue}">
+          
+          <div class="discount-value-wrap">
+    		<input type="number" class="js-input js-discount-value" min="0" step="0.01" 
+    		  th:field="*{products[__${stat.index}__].discountValue}">
+            <span class="unit js-discount-unit"></span>
+  		  </div>
         </div>
 
         <div class="row">
@@ -202,6 +206,9 @@
     });
 
     hidden.style.display = "";
+ 	// 복구한 칸을 맨 뒤로 이동
+    container.appendChild(hidden);
+    applyDiscountUI(hidden);
     return true;
   }
   
@@ -231,6 +238,32 @@
 	    }
 	  });
 	}
+  
+  function applyDiscountUI(row) {
+	  const typeSel = row.querySelector(".js-discount-type");
+	  const valueInput = row.querySelector(".js-discount-value");
+	  const unitSpan = row.querySelector(".js-discount-unit");
+
+	  if (!typeSel || !valueInput || !unitSpan) return;
+
+	  const type = typeSel.value;
+
+	  if (type === "none") {
+	    valueInput.disabled = true;
+	    valueInput.value = ""; 
+	    valueInput.classList.add("is-disabled");
+	    unitSpan.textContent = "";
+	  } else if (type === "fixed") {
+	    valueInput.disabled = false;
+	    valueInput.classList.remove("is-disabled");
+	    unitSpan.textContent = "원";
+	  } else if (type === "percent") {
+	    valueInput.disabled = false;
+	    valueInput.classList.remove("is-disabled");
+	    unitSpan.textContent = "%";
+	  }
+	}
+
 
 
   // ---- 상품 추가 (최대 5) ----
@@ -271,12 +304,18 @@
 
       <div class="row">
         <label>상품 할인</label>
-        <select class="js-input" name="products[${idx}].discountType">
-          <option value="none" selected>없음</option>
-          <option value="fixed">정액(원)</option>
-          <option value="percent">정률(%)</option>
-        </select>
-        <input type="number" class="js-input" min="0" step="0.01" name="products[${idx}].discountValue" value="0">
+        
+        <select class="js-input js-discount-type" name="products[${idx}].discountType">
+      	  <option value="none">없음</option>
+          <option value="fixed">정액(원/개)</option>
+      	  <option value="percent">정률(%)</option>
+      	</select>
+
+        <div class="discount-value-wrap">
+          <input type="number" class="js-input js-discount-value" min="0" step="0.01"
+        	  name="products[${idx}].discountValue" value="">
+      	  <span class="unit js-discount-unit"></span>
+        </div>
       </div>
 
       <div class="row">
@@ -284,6 +323,7 @@
       </div>
     `;
     productsDiv.appendChild(box);
+    applyDiscountUI(box);
     updateRemoveButtons();
   });
 
@@ -335,6 +375,17 @@
     `;
     couponsDiv.appendChild(box);
   });
+  
+  //상품 할인 타입 변경 감지
+  document.addEventListener("change", function (e) {
+    const sel = e.target.closest(".js-discount-type");
+    if (!sel) return;
+
+    const row = sel.closest(".js-row");
+    if (!row) return;
+
+    applyDiscountUI(row);
+  });
 
   // ---- 칸 지우기(숨김) : 상품/쿠폰 공통 ----
   document.addEventListener("click", (e) => {
@@ -378,6 +429,12 @@
   
   //상품갯수에 따라 삭제 버튼 업데이트
   updateRemoveButtons();
+  
+  //페이지 로드시 기존 상품들에 적용
+  document.querySelectorAll("#products .js-row").forEach(row => {
+    applyDiscountUI(row);
+  });
+
 </script>
 
 </body>
