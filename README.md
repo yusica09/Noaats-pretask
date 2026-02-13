@@ -107,20 +107,28 @@ form/
 ./mvnw spring-boot:run
 ```
 
-*Windows
+**Windows**
+```
 mvnw.cmd spring-boot:run
+```
 
-브라우저 접속:
+**브라우저 접속:**
+```
 http://localhost:8080
+```
 
-Maven이 설치되어 있는 경우
+**Maven이 설치되어 있는 경우**
+```
 mvn spring-boot:run
+```
 
 ** Eclipse에서 실행(참고) **
+```
  - Boot Dashboard → noaats-pretask 우클릭 → Start
  - Boot Dashboard → noaats-pretask 우클릭 → Open Web Browser
  또는
  - NoaatsPretaskApplication 우클릭 → Run As → Spring Boot App
+```
 
 ---
 
